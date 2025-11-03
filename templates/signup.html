@@ -1,0 +1,136 @@
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+import pandas as pd
+import threading
+import os
+import json
+from packet_sniffer import start_sniffer
+
+app = Flask(__name__)
+app.secret_key = "your_secret_key"  # Replace with a secure key for session management
+
+# Global variable for the dynamic threshold
+anomaly_threshold = 1500
+
+# Ensure the data directory and file exist
+os.makedirs("data", exist_ok=True)
+if not os.path.exists("data/traffic_data.csv"):
+    with open("data/traffic_data.csv", "w") as f:
+        f.write("timestamp,src_ip,dst_ip,protocol,packet_size\n")
+
+# Ensure user data file exists
+user_file = "data/users.json"
+if not os.path.exists(user_file):
+    with open(user_file, "w") as f:
+        json.dump({}, f)
+
+
+@app.route('/')
+def index():
+    if "user" in session:
+        return redirect(url_for("dashboard"))
+    return redirect(url_for("login"))
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if "user" in session:
+        return redirect(url_for("dashboard"))
+
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        with open(user_file, "r") as f:
+            users = json.load(f)
+
+        if username in users and users[username] == password:
+            session["user"] = username
+            return redirect(url_for("dashboard"))
+        else:
+            error = "Invalid Username or Password"
+
+    return render_template('login.html', error=error)
+
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        with open(user_file, "r") as f:
+            users = json.load(f)
+
+        if username in users:
+            error = "Username already exists"
+        else:
+            users[username] = password
+            with open(user_file, "w") as f:
+                json.dump(users, f)
+            session["user"] = username
+            return redirect(url_for("dashboard"))
+
+    return render_template('signup.html', error=error)
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+
+@app.route('/dashboard')
+def dashboard():
+    if "user" not in session:
+        return redirect(url_for("login"))
+    return render_template('index.html')
+
+
+@app.route('/get_packets')
+def get_packets():
+    data = pd.read_csv("data/traffic_data.csv", header=None, names=["timestamp", "src_ip", "dst_ip", "protocol", "packet_size"])
+    return data.tail(20).to_json(orient='records')
+
+
+@app.route('/get_alerts')
+def get_alerts():
+    data = pd.read_csv("data/traffic_data.csv", header=None, names=["timestamp", "src_ip", "dst_ip", "protocol", "packet_size"])
+    alerts = detect_anomalies(data)
+    return jsonify(alerts)
+
+
+@app.route('/get_traffic_stats')
+def get_traffic_stats():
+    data = pd.read_csv("data/traffic_data.csv", header=None, names=["timestamp", "src_ip", "dst_ip", "protocol", "packet_size"])
+    stats = {
+        "timestamps": data["timestamp"].tolist(),
+        "sizes": data["packet_size"].tolist()
+    }
+    return jsonify(stats)
+
+
+@app.route('/set_threshold', methods=['POST'])
+def set_threshold():
+    global anomaly_threshold
+    threshold = request.json.get("threshold")
+    if threshold:
+        anomaly_threshold = int(threshold)
+        return jsonify({"status": "success", "threshold": anomaly_threshold})
+    return jsonify({"status": "error", "message": "Invalid threshold value"}), 400
+
+
+def detect_anomalies(data):
+    global anomaly_threshold
+    alerts = []
+    for _, row in data.iterrows():
+        if row['packet_size'] > anomaly_threshold:
+            alerts.append(f"Large packet detected: {row['src_ip']} -> {row['dst_ip']} (Size: {row['packet_size']})")
+    return alerts
+
+
+if __name__ == "__main__":
+    sniffer_thread = threading.Thread(target=start_sniffer, daemon=True)
+    sniffer_thread.start()
+    app.run(debug=True)

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GeoIP Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    const map = L.map('map').setView([20, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    async function plotGeoIP() {
+      try {
+        const res = await fetch('/get_geo_data');
+        const data = await res.json();
+        data.forEach(d => {
+          if (d.city && d.country) {
+            L.marker([d.latitude || 20, d.longitude || 0])
+              .addTo(map)
+              .bindPopup(`${d.src_ip} - ${d.city}, ${d.country}`);
+          }
+        });
+      } catch (error) {
+        console.error('Map fetch error:', error);
+      }
+    }
+
+    plotGeoIP();
+  </script>
+</body>
+</html>

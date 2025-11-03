@@ -1,0 +1,96 @@
+/* General styles */
+body {
+    font-family: 'Poppins', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: url('https://source.unsplash.com/1600x900/?technology') no-repeat center center fixed;
+    background-size: cover; /* Ensures the image covers the entire screen */
+    color: #525252;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Container for the login form */
+.login-container {
+    background: rgba(255, 255, 255, 0.8); /* Semi-transparent white for readability */
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+/* Title */
+.login-container h1 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Input fields */
+.login-container input[type="text"],
+.login-container input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+    transition: all 0.3s ease-in-out;
+}
+
+.login-container input[type="text"]:focus,
+.login-container input[type="password"]:focus {
+    border: 1px solid #6a11cb;
+    box-shadow: 0 0 5px rgba(106, 17, 203, 0.5);
+    outline: none;
+}
+
+/* Login button */
+.login-container button {
+    width: 100%;
+    padding: 12px;
+    background-color: #6a11cb;
+    border: none;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.login-container button:hover {
+    background-color: #2575fc;
+}
+
+/* Links */
+.login-container a {
+    display: block;
+    margin-top: 15px;
+    font-size: 14px;
+    color: #6a11cb;
+    text-decoration: none;
+    transition: color 0.3s ease-in-out;
+}
+
+.login-container a:hover {
+    color: #2575fc;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .login-container {
+        padding: 20px;
+    }
+
+    .login-container h1 {
+        font-size: 20px;
+    }
+}
